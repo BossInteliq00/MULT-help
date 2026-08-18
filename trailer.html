@@ -1,0 +1,2660 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+<meta charset="UTF-8">
+
+<meta name="viewport"
+      content="width=device-width,
+      initial-scale=1.0,
+      maximum-scale=1.0,
+      user-scalable=no,
+      viewport-fit=cover">
+
+<title>MULT архив — 2D анимация</title>
+<link rel="icon" type="image/png" href="images/icon.png">
+<style>
+*{
+  box-sizing:border-box;
+}
+
+html,
+body{
+  margin:0;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:#111;
+  font-family:Arial,Helvetica,sans-serif;
+}
+
+body{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+/* ================================
+   НЕГІЗГІ ЭКРАН
+================================ */
+
+#app{
+  position:relative;
+
+  width:100vw;
+  height:100dvh;
+
+  max-width:430px;
+  max-height:764px;
+
+  overflow:hidden;
+
+  background:#f7fbff;
+  color:#162033;
+
+  isolation:isolate;
+}
+
+/* Телефонның пропорциясын сақтау */
+@media(min-width:431px){
+  #app{
+    width:min(100vw,56.25vh);
+    height:min(100vh,177.777vw);
+  }
+}
+
+/* ================================
+   СЦЕНАЛАР
+================================ */
+
+.scene{
+  position:absolute;
+  inset:0;
+
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+
+  padding:
+    max(72px,8vh)
+    clamp(15px,5vw,25px)
+    max(78px,10vh);
+
+  opacity:0;
+
+  transform:
+    translateX(35px)
+    scale(.98);
+
+  pointer-events:none;
+
+  transition:
+    opacity .45s ease,
+    transform .55s ease;
+
+  overflow:hidden;
+}
+
+.scene.active{
+  opacity:1;
+  transform:none;
+  pointer-events:auto;
+}
+
+/* Сценаның ішіндегі негізгі контент */
+.scene > div:not(.bg):not(.logo){
+  max-width:100%;
+}
+
+/* ================================
+   ФОН
+================================ */
+
+.bg{
+  position:absolute;
+  inset:0;
+
+  overflow:hidden;
+
+  background:
+    linear-gradient(
+      160deg,
+      #eef8ff,
+      #fff 55%,
+      #f7f0ff
+    );
+
+  z-index:-2;
+}
+
+.blob{
+  position:absolute;
+  border-radius:50%;
+  filter:blur(1px);
+  opacity:.65;
+}
+
+.b1{
+  width:clamp(130px,44vw,190px);
+  height:clamp(130px,44vw,190px);
+  background:#bceeff;
+  top:-60px;
+  right:-55px;
+}
+
+.b2{
+  width:clamp(110px,35vw,150px);
+  height:clamp(110px,35vw,150px);
+  background:#e5d1ff;
+  bottom:-45px;
+  left:-55px;
+}
+
+/* ================================
+   LOGO
+================================ */
+
+.logo{
+  position:absolute;
+
+  top:
+    max(18px,env(safe-area-inset-top));
+
+  left:clamp(15px,5.5vw,24px);
+
+  font-weight:900;
+
+  font-size:clamp(16px,5vw,20px);
+
+  color:#6750e8;
+
+  letter-spacing:-1px;
+
+  z-index:10;
+}
+
+/* ================================
+   МӘТІН
+================================ */
+
+h1{
+  font-size:clamp(25px,8vw,35px);
+  line-height:1.06;
+
+  margin:
+    clamp(10px,3vw,15px)
+    0
+    clamp(7px,2vw,10px);
+
+  letter-spacing:-1px;
+
+  overflow-wrap:anywhere;
+}
+
+h2{
+  font-size:clamp(20px,6.4vw,26px);
+  line-height:1.12;
+
+  margin:
+    clamp(9px,3vw,12px)
+    0;
+
+  letter-spacing:-.5px;
+
+  overflow-wrap:anywhere;
+}
+
+p{
+  font-size:clamp(13px,4vw,15px);
+  line-height:1.48;
+
+  margin:7px 0;
+
+  color:#566174;
+
+  overflow-wrap:anywhere;
+}
+
+small{
+  font-size:clamp(10px,3vw,13px);
+  line-height:1.4;
+}
+
+.highlight{color:#6750e8}
+.pink{color:#ec5a9a}
+.green{color:#16a477}
+
+.center{
+  text-align:center;
+  align-items:center;
+}
+
+.sub{
+  font-size:clamp(11px,3.5vw,13px);
+  color:#687489;
+  line-height:1.45;
+}
+
+/* ================================
+   BADGE
+================================ */
+
+.badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+
+  gap:6px;
+
+  background:#fff;
+
+  border:1px solid #e5eaf4;
+
+  border-radius:999px;
+
+  padding:
+    clamp(6px,2vw,8px)
+    clamp(9px,3vw,12px);
+
+  font-size:clamp(9px,3vw,11px);
+
+  font-weight:800;
+
+  box-shadow:0 8px 22px #243b5312;
+
+  max-width:100%;
+
+  text-align:center;
+
+  overflow-wrap:anywhere;
+}
+
+/* ================================
+   CARD / UI
+================================ */
+
+.ui{
+  background:#fff;
+
+  border:1px solid #e4eaf3;
+
+  border-radius:
+    clamp(14px,5vw,20px);
+
+  box-shadow:
+    0 16px 45px #243b5318;
+
+  max-width:100%;
+}
+
+/* ================================
+   BROWSER
+================================ */
+
+.browser{
+  width:100%;
+
+  padding:clamp(7px,2.5vw,10px);
+
+  margin-top:
+    clamp(10px,4vw,20px);
+}
+
+.dots{
+  display:flex;
+  gap:5px;
+  margin-bottom:9px;
+}
+
+.dot{
+  width:7px;
+  height:7px;
+
+  border-radius:50%;
+
+  background:#dce2ec;
+}
+
+.screen{
+  width:100%;
+
+  height:clamp(100px,35vw,145px);
+
+  border-radius:
+    clamp(10px,3vw,13px);
+
+  background:
+    linear-gradient(
+      135deg,
+      #7559ef,
+      #62c9ef
+    );
+
+  padding:13px;
+
+  position:relative;
+
+  overflow:hidden;
+}
+
+.screen:after{
+  content:"";
+
+  position:absolute;
+
+  width:clamp(80px,28vw,110px);
+  height:clamp(80px,28vw,110px);
+
+  border-radius:50%;
+
+  right:-25px;
+  bottom:-30px;
+
+  background:#fff3;
+
+  animation:
+    float 3s infinite ease-in-out;
+}
+
+.play{
+  position:absolute;
+
+  left:50%;
+  top:50%;
+
+  transform:translate(-50%,-50%);
+
+  width:clamp(38px,12vw,44px);
+  height:clamp(38px,12vw,44px);
+
+  border-radius:50%;
+
+  background:#fff;
+
+  display:grid;
+  place-items:center;
+
+  color:#6750e8;
+
+  font-size:clamp(15px,5vw,18px);
+
+  box-shadow:0 8px 20px #0002;
+}
+
+/* ================================
+   AI
+================================ */
+
+.ai{
+  width:clamp(90px,30vw,120px);
+  height:clamp(110px,36vw,145px);
+
+  position:relative;
+
+  margin:
+    0
+    auto
+    clamp(5px,2vw,8px);
+
+  animation:
+    float 2.7s infinite ease-in-out;
+
+  transform-origin:center;
+}
+
+.ai .body{
+  position:absolute;
+
+  width:65%;
+  height:57%;
+
+  left:17.5%;
+  bottom:3.5%;
+
+  border-radius:
+    42px 42px
+    30px 30px;
+
+  background:
+    linear-gradient(
+      145deg,
+      #7258ee,
+      #4e8ff3
+    );
+
+  box-shadow:
+    inset 0 -8px #4d6fe0;
+}
+
+.ai .head{
+  position:absolute;
+
+  width:77%;
+  height:52%;
+
+  left:11.5%;
+  top:3%;
+
+  border-radius:44px;
+
+  background:#fff;
+
+  border:
+    clamp(3px,.9vw,5px)
+    solid #6655e8;
+
+  box-shadow:
+    0 8px 20px #243b5320;
+}
+
+.eye{
+  position:absolute;
+
+  width:9px;
+  height:13px;
+
+  border-radius:50%;
+
+  background:#25304a;
+
+  top:36%;
+}
+
+.e1{left:29%}
+.e2{right:29%}
+
+.mouth{
+  position:absolute;
+
+  width:27%;
+  height:11px;
+
+  border-bottom:4px solid #ec5a9a;
+
+  border-radius:
+    0 0 18px 18px;
+
+  left:36%;
+  top:60%;
+}
+
+.antenna{
+  position:absolute;
+
+  width:4px;
+  height:19px;
+
+  background:#6655e8;
+
+  left:37%;
+  top:-14%;
+
+  z-index:2;
+}
+
+.antenna:after{
+  content:"";
+
+  position:absolute;
+
+  width:10px;
+  height:10px;
+
+  border-radius:50%;
+
+  background:#ffcc5c;
+
+  left:-3px;
+  top:-5px;
+}
+
+.arm{
+  position:absolute;
+
+  width:29%;
+  height:9%;
+
+  border-radius:20px;
+
+  background:#596fe5;
+
+  top:52%;
+}
+
+.a1{
+  left:1%;
+  transform:rotate(25deg);
+}
+
+.a2{
+  right:1%;
+
+  transform:rotate(-42deg);
+
+  transform-origin:left;
+}
+
+.wave{
+  animation:wave .65s infinite alternate;
+}
+
+/* ================================
+   POSTERS
+================================ */
+
+.posters{
+  display:grid;
+
+  grid-template-columns:
+    repeat(3,minmax(0,1fr));
+
+  gap:clamp(5px,2vw,8px);
+
+  margin-top:
+    clamp(10px,4vw,14px);
+
+  width:100%;
+}
+
+.p{
+  width:100%;
+
+  height:
+    clamp(55px,20vw,72px);
+
+  border-radius:
+    clamp(8px,3vw,12px);
+
+  background:
+    linear-gradient(
+      145deg,
+      #ffd35f,
+      #ff729e
+    );
+
+  animation:
+    poster .8s both;
+}
+
+.p:nth-child(2){
+  background:
+    linear-gradient(
+      145deg,
+      #69d6ff,
+      #735de7
+    );
+  animation-delay:.1s;
+}
+
+.p:nth-child(3){
+  background:
+    linear-gradient(
+      145deg,
+      #a7e67c,
+      #43b6da
+    );
+  animation-delay:.2s;
+}
+
+.p:nth-child(4){
+  background:
+    linear-gradient(
+      145deg,
+      #ff9f71,
+      #e65fbb
+    );
+  animation-delay:.3s;
+}
+
+.p:nth-child(5){
+  background:
+    linear-gradient(
+      145deg,
+      #72e3cf,
+      #5983ec
+    );
+  animation-delay:.4s;
+}
+
+.p:nth-child(6){
+  background:
+    linear-gradient(
+      145deg,
+      #ffd86c,
+      #72c7ff
+    );
+  animation-delay:.5s;
+}
+
+/* ================================
+   COUNTER
+================================ */
+
+.counter{
+  font-size:clamp(42px,15vw,54px);
+
+  font-weight:900;
+
+  color:#6750e8;
+
+  text-align:center;
+
+  margin:5px 0;
+}
+
+.arrow{
+  text-align:center;
+
+  font-size:
+    clamp(22px,8vw,27px);
+
+  color:#8792a7;
+}
+
+/* ================================
+   PEOPLE
+================================ */
+
+.people{
+  height:
+    clamp(75px,29vw,110px);
+
+  display:flex;
+
+  justify-content:center;
+  align-items:center;
+
+  gap:4px;
+
+  flex-wrap:wrap;
+
+  margin:
+    clamp(8px,3vw,14px)
+    0;
+
+  overflow:hidden;
+}
+
+.person{
+  font-size:
+    clamp(16px,6vw,24px);
+
+  animation:
+    pop .35s both;
+}
+
+/* ================================
+   STEPS
+================================ */
+
+.steps{
+  width:100%;
+
+  margin-top:
+    clamp(9px,3vw,14px);
+}
+
+.step{
+  display:flex;
+
+  align-items:center;
+
+  gap:9px;
+
+  background:#fff;
+
+  border:1px solid #e6ebf3;
+
+  border-radius:
+    clamp(10px,3.5vw,13px);
+
+  padding:
+    clamp(7px,2.5vw,9px);
+
+  margin:
+    6px 0;
+
+  font-size:
+    clamp(10px,3.5vw,12px);
+
+  line-height:1.3;
+
+  box-shadow:
+    0 6px 15px #243b5308;
+
+  animation:
+    slidein .5s both;
+}
+
+.num{
+  min-width:
+    clamp(23px,8vw,26px);
+
+  height:
+    clamp(23px,8vw,26px);
+
+  border-radius:50%;
+
+  display:grid;
+  place-items:center;
+
+  background:#6750e8;
+
+  color:white;
+
+  font-weight:bold;
+
+  flex-shrink:0;
+}
+
+/* ================================
+   GROUPS
+================================ */
+
+.groups{
+  display:grid;
+
+  grid-template-columns:
+    repeat(2,minmax(0,1fr));
+
+  gap:
+    clamp(6px,3vw,10px);
+
+  margin-top:
+    clamp(10px,4vw,16px);
+}
+
+.group{
+  padding:
+    clamp(9px,3.5vw,14px)
+    clamp(6px,2.5vw,10px);
+
+  text-align:center;
+
+  border-radius:
+    clamp(12px,4vw,16px);
+
+  background:#fff;
+
+  border:1px solid #e6ebf3;
+
+  box-shadow:
+    0 10px 22px #243b5310;
+
+  font-size:
+    clamp(9px,3vw,11px);
+
+  line-height:1.35;
+
+  overflow-wrap:anywhere;
+}
+
+.icon{
+  font-size:
+    clamp(23px,8vw,30px);
+
+  margin-bottom:7px;
+}
+
+/* ================================
+   CODE
+================================ */
+
+.code{
+  width:100%;
+
+  height:
+    clamp(90px,29vw,115px);
+
+  border-radius:
+    clamp(12px,4vw,16px);
+
+  background:#20273a;
+
+  color:#dce5ff;
+
+  padding:
+    clamp(9px,3vw,13px);
+
+  font:
+    clamp(8px,2.8vw,10px)
+    monospace;
+
+  box-shadow:
+    0 15px 30px #243b5320;
+
+  overflow:hidden;
+
+  text-align:left;
+}
+
+.line{
+  margin:5px 0;
+  white-space:nowrap;
+}
+
+.cursor{
+  display:inline-block;
+
+  width:5px;
+  height:11px;
+
+  background:#7de2c1;
+
+  animation:
+    blink .7s infinite;
+}
+
+/* ================================
+   LIVE
+================================ */
+
+.live{
+  display:inline-flex;
+
+  align-items:center;
+
+  gap:7px;
+
+  background:#171b2b;
+
+  color:white;
+
+  border-radius:999px;
+
+  padding:
+    7px
+    clamp(9px,3vw,13px);
+
+  font-weight:800;
+
+  font-size:
+    clamp(10px,3.5vw,12px);
+}
+
+.live i{
+  width:8px;
+  height:8px;
+
+  background:#ff4d6d;
+
+  border-radius:50%;
+
+  animation:
+    blink .7s infinite;
+}
+
+/* ================================
+   FINAL
+================================ */
+
+.final{
+  background:
+    linear-gradient(
+      145deg,
+      #5c4be8,
+      #8a67ef 50%,
+      #5ac8ec
+    );
+
+  color:#fff;
+}
+
+.final .logo{
+  color:#fff;
+}
+
+.final p{
+  color:#edf0ff;
+}
+
+.final .ui{
+  background:#ffffff18;
+  border-color:#ffffff30;
+  color:#fff;
+}
+
+.final h1{
+  font-size:
+    clamp(29px,9vw,39px);
+}
+
+/* ================================
+   DEMO BUTTONS
+================================ */
+
+.demoBtn,
+.registerBtn{
+  border:0;
+
+  border-radius:999px;
+
+  padding:
+    clamp(9px,3vw,11px)
+    clamp(11px,4vw,15px);
+
+  margin-top:8px;
+
+  font-weight:800;
+
+  cursor:pointer;
+
+  width:100%;
+
+  font-size:
+    clamp(11px,3.5vw,14px);
+
+  min-height:42px;
+}
+
+.demoBtn{
+  background:#fff;
+  color:#6750e8;
+}
+
+.registerBtn{
+  background:#ff4d5f;
+  color:#fff;
+
+  box-shadow:
+    0 8px 20px #0002;
+}
+
+/* ================================
+   PROGRESS
+================================ */
+
+.progress{
+  position:absolute;
+
+  left:12px;
+  right:12px;
+
+  bottom:
+    max(10px,env(safe-area-inset-bottom));
+
+  height:3px;
+
+  background:#ffffff55;
+
+  border-radius:9px;
+
+  z-index:20;
+}
+
+.bar{
+  height:100%;
+  width:0;
+
+  background:#fff;
+
+  border-radius:9px;
+}
+
+/* ================================
+   CONTROL
+================================ */
+
+.controls{
+  position:absolute;
+
+  left:50%;
+
+  bottom:
+    max(18px,calc(env(safe-area-inset-bottom) + 15px));
+
+  transform:translateX(-50%);
+
+  display:flex;
+
+  justify-content:center;
+
+  align-items:center;
+
+  gap:5px;
+
+  z-index:50;
+
+  width:
+    calc(100% - 20px);
+
+  max-width:410px;
+}
+
+.controls button{
+  border:0;
+
+  background:#fff;
+
+  color:#222;
+
+  padding:
+    8px
+    clamp(7px,2.2vw,11px);
+
+  border-radius:999px;
+
+  font-weight:700;
+
+  box-shadow:
+    0 7px 20px #0003;
+
+  cursor:pointer;
+
+  font-size:
+    clamp(8px,2.7vw,11px);
+
+  min-height:34px;
+
+  white-space:nowrap;
+
+  flex:1;
+
+  min-width:0;
+}
+
+.controls button:active{
+  transform:scale(.94);
+}
+
+/* ================================
+   MUSIC
+================================ */
+
+.musicBtn{
+  position:absolute;
+
+  top:
+    max(15px,env(safe-area-inset-top));
+
+  right:
+    clamp(10px,4vw,18px);
+
+  z-index:50;
+
+  border:0;
+
+  background:#fff;
+
+  color:#222;
+
+  padding:
+    7px
+    clamp(8px,3vw,11px);
+
+  border-radius:999px;
+
+  font-weight:700;
+
+  font-size:
+    clamp(8px,2.8vw,10px);
+
+  box-shadow:
+    0 7px 20px #0003;
+
+  cursor:pointer;
+
+  max-width:125px;
+}
+
+/* ================================
+   MODAL
+================================ */
+
+.modal{
+  position:absolute;
+
+  inset:0;
+
+  background:
+    rgba(35,0,0,.72);
+
+  backdrop-filter:blur(5px);
+
+  display:flex;
+
+  align-items:center;
+  justify-content:center;
+
+  padding:
+    clamp(15px,5vw,22px);
+
+  z-index:100;
+
+  opacity:0;
+
+  visibility:hidden;
+
+  pointer-events:none;
+
+  transition:.25s ease;
+}
+
+.modal.show{
+  opacity:1;
+
+  visibility:visible;
+
+  pointer-events:auto;
+}
+
+.modalCard{
+  width:100%;
+
+  max-width:350px;
+
+  max-height:
+    calc(100% - 20px);
+
+  overflow:auto;
+
+  background:
+    linear-gradient(
+      145deg,
+      #ff263f,
+      #d90024
+    );
+
+  color:#fff;
+
+  border-radius:
+    clamp(18px,6vw,24px);
+
+  padding:
+    clamp(17px,5vw,25px)
+    clamp(14px,5vw,20px);
+
+  text-align:center;
+
+  box-shadow:
+    0 25px 70px #0008;
+
+  transform:
+    scale(.85)
+    translateY(20px);
+
+  transition:.3s ease;
+
+  border:
+    2px solid #ff7080;
+}
+
+.modal.show .modalCard{
+  transform:
+    scale(1)
+    translateY(0);
+}
+
+.modalIcon{
+  width:
+    clamp(50px,16vw,62px);
+
+  height:
+    clamp(50px,16vw,62px);
+
+  margin:
+    0 auto 8px;
+
+  border-radius:50%;
+
+  background:#fff;
+
+  display:grid;
+
+  place-items:center;
+
+  font-size:
+    clamp(24px,8vw,30px);
+}
+
+.modalCard h2{
+  margin:8px 0 10px;
+  color:#fff;
+}
+
+.modalCard p{
+  color:#fff;
+
+  font-size:
+    clamp(12px,4vw,15px);
+}
+
+.dateBox{
+  background:#a9001c;
+
+  border:
+    1px solid #ff7b89;
+
+  border-radius:15px;
+
+  padding:
+    clamp(10px,3.5vw,13px);
+
+  margin:
+    clamp(10px,4vw,15px)
+    0;
+
+  line-height:1.6;
+
+  font-size:
+    clamp(11px,3.5vw,14px);
+}
+
+.modalSmall{
+  font-size:
+    clamp(10px,3vw,12px)!important;
+
+  opacity:.95;
+}
+
+.modalCard button{
+  width:100%;
+
+  border:0;
+
+  border-radius:999px;
+
+  padding:12px;
+
+  background:#fff;
+
+  color:#d90024;
+
+  font-weight:900;
+
+  cursor:pointer;
+
+  margin-top:5px;
+
+  min-height:42px;
+}
+
+/* ================================
+   АНИМАЦИЯ
+================================ */
+
+@keyframes pop{
+  from{
+    opacity:0;
+    transform:scale(.5);
+  }
+
+  to{
+    opacity:1;
+    transform:scale(1);
+  }
+}
+
+@keyframes poster{
+  from{
+    opacity:0;
+    transform:
+      translateY(20px)
+      scale(.9);
+  }
+
+  to{
+    opacity:1;
+    transform:none;
+  }
+}
+
+@keyframes slidein{
+  from{
+    opacity:0;
+    transform:translateX(-25px);
+  }
+
+  to{
+    opacity:1;
+    transform:none;
+  }
+}
+
+@keyframes float{
+  50%{
+    transform:translateY(-7px);
+  }
+}
+
+@keyframes wave{
+  to{
+    transform:rotate(-65deg);
+  }
+}
+
+@keyframes blink{
+  50%{
+    opacity:.25;
+  }
+}
+
+/* ================================
+   ӨТЕ КІШКЕНТАЙ ТЕЛЕФОН
+   320px және одан төмен
+================================ */
+
+@media(max-width:340px){
+
+  .scene{
+    padding:
+      65px
+      13px
+      73px;
+  }
+
+  h1{
+    font-size:24px;
+    letter-spacing:-.6px;
+  }
+
+  h2{
+    font-size:19px;
+    letter-spacing:-.3px;
+  }
+
+  p{
+    font-size:12px;
+  }
+
+  .badge{
+    font-size:8px;
+    padding:6px 8px;
+  }
+
+  .ai{
+    transform:scale(.82);
+    margin-top:-8px;
+    margin-bottom:-12px;
+  }
+
+  .screen{
+    height:92px;
+  }
+
+  .posters{
+    gap:5px;
+  }
+
+  .p{
+    height:48px;
+  }
+
+  .people{
+    height:72px;
+  }
+
+  .person{
+    font-size:15px;
+  }
+
+  .step{
+    font-size:9px;
+    padding:6px;
+    gap:6px;
+    margin:4px 0;
+  }
+
+  .num{
+    min-width:21px;
+    height:21px;
+    font-size:9px;
+  }
+
+  .group{
+    font-size:8px;
+    padding:8px 5px;
+  }
+
+  .icon{
+    font-size:21px;
+  }
+
+  .counter{
+    font-size:40px;
+  }
+
+  .controls{
+    gap:3px;
+    width:calc(100% - 12px);
+  }
+
+  .controls button{
+    padding:6px 4px;
+    font-size:7px;
+    min-height:30px;
+  }
+
+  .musicBtn{
+    font-size:7px;
+    padding:6px 7px;
+  }
+
+  .final h1{
+    font-size:25px;
+  }
+
+  .final .ui{
+    padding:10px!important;
+  }
+
+  .demoBtn,
+  .registerBtn{
+    min-height:38px;
+    font-size:10px;
+  }
+}
+
+/* ================================
+   ӨТЕ ТӨМЕН ЭКРАН
+================================ */
+
+@media(max-height:650px){
+
+  .scene{
+    padding-top:62px;
+    padding-bottom:72px;
+  }
+
+  h1{
+    font-size:
+      clamp(23px,7vw,30px);
+  }
+
+  h2{
+    font-size:
+      clamp(18px,5.8vw,23px);
+  }
+
+  .ai{
+    transform:scale(.78);
+    margin-top:-15px;
+    margin-bottom:-18px;
+  }
+
+  .screen{
+    height:95px;
+  }
+
+  .people{
+    height:65px;
+  }
+
+  .posters .p{
+    height:48px;
+  }
+
+  .controls{
+    bottom:
+      max(8px,calc(env(safe-area-inset-bottom) + 5px));
+  }
+
+  .controls button{
+    min-height:29px;
+    padding:6px 5px;
+  }
+}
+
+/* ================================
+   ЛАНДШАФТ
+================================ */
+
+@media(max-height:500px) and (orientation:landscape){
+
+  #app{
+    max-width:none;
+    max-height:none;
+
+    width:100vw;
+    height:100dvh;
+  }
+
+  .scene{
+    padding:
+      35px
+      clamp(15px,5vw,35px)
+      45px;
+  }
+
+  .ai{
+    transform:scale(.55);
+    margin-top:-35px;
+    margin-bottom:-40px;
+  }
+
+  h1{
+    font-size:23px;
+  }
+
+  h2{
+    font-size:19px;
+  }
+
+  p{
+    font-size:11px;
+  }
+
+  .posters .p{
+    height:40px;
+  }
+
+  .screen{
+    height:70px;
+  }
+
+  .controls{
+    bottom:5px;
+  }
+
+  .controls button{
+    min-height:27px;
+    font-size:8px;
+  }
+}
+
+/* ================================
+   ҚОЛЖЕТІМДІЛІК
+================================ */
+
+@media(prefers-reduced-motion:reduce){
+
+  .scene{
+    transition:none;
+  }
+
+  *,
+  *::before,
+  *::after{
+    animation-duration:.01ms!important;
+    animation-iteration-count:1!important;
+    transition-duration:.01ms!important;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div id="app">
+
+<div class="progress">
+  <div class="bar" id="bar"></div>
+</div>
+
+<section class="scene active" data-time="4">
+
+<div class="bg">
+  <i class="blob b1"></i>
+  <i class="blob b2"></i>
+</div>
+
+<div class="logo">MULT архив</div>
+
+<div class="center" style="z-index:2">
+
+<div class="ai">
+  <div class="antenna"></div>
+
+  <div class="head">
+    <span class="eye e1"></span>
+    <span class="eye e2"></span>
+    <span class="mouth"></span>
+  </div>
+
+  <div class="body"></div>
+
+  <div class="arm a1"></div>
+  <div class="arm a2 wave"></div>
+</div>
+
+<div class="badge">🤖 AI КӨМЕКШІ</div>
+
+<h1>
+Сәлем, MULT архив көрермені!
+</h1>
+
+<p>
+Мен сіздің
+<b class="highlight">AI көмекшіңізбін.</b><br>
+Қазір сайтқа қалай кіруге болатынын түсіндіремін.
+</p>
+
+</div>
+</section>
+
+
+<section class="scene" data-time="5">
+
+<div class="bg">
+  <i class="blob b1"></i>
+  <i class="blob b2"></i>
+</div>
+
+<div class="logo">MULT архив</div>
+
+<div style="z-index:2">
+
+<div class="badge">🎬 КІРІСПЕ</div>
+
+<h1>
+«MULT архив сайтына қалай кіреміз?»
+</h1>
+
+<p>
+Және неге кейбір қолданушылар кіре алмай қалды?
+</p>
+
+<div class="browser ui">
+
+<div class="dots">
+  <i class="dot"></i>
+  <i class="dot"></i>
+  <i class="dot"></i>
+</div>
+
+<div class="screen">
+  <div class="play">▶</div>
+</div>
+
+</div>
+
+</div>
+</section>
+
+
+<section class="scene" data-time="5">
+
+<div class="bg"></div>
+
+<div class="logo">MULT архив</div>
+
+<div style="z-index:2">
+
+<div class="badge">
+🎯 ЖОБАНЫҢ МАҚСАТЫ
+</div>
+
+<h2>
+MULT архив — мультфильмдер мен фильмдер көруге арналған жоба.
+</h2>
+
+<div class="posters">
+
+<div class="p"></div>
+<div class="p"></div>
+<div class="p"></div>
+<div class="p"></div>
+<div class="p"></div>
+<div class="p"></div>
+
+</div>
+
+<p style="margin-top:15px">
+🔎 Іздеу &nbsp; • &nbsp;
+▶ Видео &nbsp; • &nbsp;
+⭐ Архив
+</p>
+
+</div>
+</section>
+
+
+<section class="scene" data-time="5">
+
+<div class="bg"></div>
+
+<div class="logo">MULT архив</div>
+
+<div style="z-index:2;text-align:center">
+
+<div class="badge">
+📢 DEMO НҰСҚАСЫ
+</div>
+
+<h2>
+Бұған дейін сайттың DEMO нұсқасына тіркелуге шақырған едім.
+</h2>
+
+<div class="counter" id="c57">0</div>
+
+<p>
+<b>адамға</b> логин мен құпия сөз берілді
+</p>
+
+</div>
+</section>
+
+
+<section class="scene" data-time="5">
+
+<div class="bg"></div>
+
+<div class="logo">MULT архив</div>
+
+<div style="z-index:2;text-align:center">
+
+<div class="badge">
+📊 НЕ БОЛДЫ?
+</div>
+
+<div class="people" id="people"></div>
+
+<h2>
+Бірақ 57 адамның ішінен
+<span class="highlight">39 адам</span>
+ғана сайтқа кірді.
+</h2>
+
+<div class="arrow">↓</div>
+
+<p>
+Қалған қолданушылар сайтқа кіре алмай қалды.
+</p>
+
+</div>
+</section>
+
+
+<section class="scene" data-time="4">
+
+<div class="bg"></div>
+
+<div class="logo">MULT архив</div>
+
+<div style="z-index:2;text-align:center">
+
+<div class="badge">
+🛡️ МОДЕРАТОРЛАР
+</div>
+
+<div class="counter" id="c19">0</div>
+
+<p>
+<b>модератор</b> сайтқа қосылды.
+</p>
+
+<div class="ui" style="padding:15px;margin-top:15px">
+
+👨‍💻 👩‍💻 👨‍💻
+
+<br>
+
+<small>
+Олар сайтты тексеріп, мультфильмдер мен фильмдерді реттеуге көмектеседі.
+</small>
+
+</div>
+
+</div>
+</section>
+
+
+<section class="scene" data-time="7">
+
+<div class="bg"></div>
+
+<div class="logo">MULT архив</div>
+
+<div style="z-index:2">
+
+<div class="badge">
+🔐 САЙТҚА ҚАЛАЙ КІРЕМІЗ?
+</div>
+
+<h2>
+5 қарапайым қадам
+</h2>
+
+<div class="steps">
+
+<div class="step">
+<span class="num">1</span>
+Сайтқа кіріңіз
+</div>
+
+<div class="step">
+<span class="num">2</span>
+Кіру / Login батырмасын басыңыз
+</div>
+
+<div class="step">
+<span class="num">3</span>
+Берілген логинді енгізіңіз
+</div>
+
+<div class="step">
+<span class="num">4</span>
+Құпия сөзді енгізіңіз
+</div>
+
+<div class="step">
+<span class="num">5</span>
+Сайтқа кіріп, мультфильмді таңдаңыз 🎬
+</div>
+
+</div>
+
+</div>
+</section>
+
+
+<section class="scene" data-time="5">
+
+<div class="bg"></div>
+
+<div class="logo">MULT архив</div>
+
+<div style="z-index:2;text-align:center">
+
+<div class="badge">
+👥 КІМДЕР КІРЕ АЛАДЫ?
+</div>
+
+<div class="groups">
+
+<div class="group">
+
+<div class="icon">🔑</div>
+
+<b>
+Логин + құпия сөз алғандар
+</b>
+
+<br>
+
+<span class="green">
+✓ Сайтқа кіре алады
+</span>
+
+</div>
+
+
+<div class="group">
+
+<div class="icon">🚪</div>
+
+<b>
+Қазір тіркелмегендер
+</b>
+
+<br>
+
+<span class="pink">
+✕ DEMO-ға кіре алмайды
+</span>
+
+</div>
+
+</div>
+
+<p style="margin-top:16px">
+Бұл — уақытша
+<b>DEMO нұсқасының шектеуі.</b>
+</p>
+
+</div>
+</section>
+
+
+<section class="scene" data-time="5">
+
+<div class="bg"></div>
+
+<div class="logo">MULT архив</div>
+
+<div style="z-index:2;text-align:center">
+
+<div class="ai"
+style="transform:scale(.72);margin-bottom:-12px">
+
+<div class="antenna"></div>
+
+<div class="head">
+<span class="eye e1"></span>
+<span class="eye e2"></span>
+<span class="mouth"></span>
+</div>
+
+<div class="body"></div>
+
+<div class="arm a1"></div>
+<div class="arm a2 wave"></div>
+
+</div>
+
+<h2>
+Кіре алмай қалғандар,
+<span class="pink">
+мұңаймаңыздар ❤️
+</span>
+</h2>
+
+<p>
+Сайт әлі толық дайын емес.
+</p>
+
+<div class="code">
+
+<div class="line">
+const multArchive = "building";
+</div>
+
+<div class="line">
+createWebsite();
+</div>
+
+<div class="line">
+addCartoons();
+<span class="cursor"></span>
+</div>
+
+</div>
+
+<p>
+<b>
+Мен бұл жобаны жалғыз өзім жасап жатырмын.
+</b>
+</p>
+
+</div>
+</section>
+
+
+<section class="scene" data-time="5">
+
+<div class="bg"></div>
+
+<div class="logo">MULT архив</div>
+
+<div style="z-index:2">
+
+<div class="badge">
+🚀 ЖАҢАЛЫҚТАР
+</div>
+
+<h2>
+Қазір сайтқа тағы да мультфильмдер мен фильмдер қосып жатырмын!
+</h2>
+
+<div class="posters">
+
+<div class="p"></div>
+<div class="p"></div>
+<div class="p"></div>
+<div class="p"></div>
+<div class="p"></div>
+<div class="p"></div>
+
+</div>
+
+<p style="margin-top:15px">
+
+<b>
+Толық нұсқасы дайын болғанда, барлығыңыз кіре аласыздар!
+</b>
+
+</p>
+
+</div>
+</section>
+
+
+<section class="scene" data-time="4">
+
+<div class="bg"></div>
+
+<div class="logo">MULT архив</div>
+
+<div class="center" style="z-index:2">
+
+<div class="live">
+<i></i> LIVE
+</div>
+
+<h1>
+Айтпақшы, кеше тікелей эфир де болды 👀
+</h1>
+
+<p>
+Сайттың дамуын бірге бақылап отырыңыздар!
+</p>
+
+<div class="browser ui">
+
+<div class="dots">
+<i class="dot"></i>
+<i class="dot"></i>
+<i class="dot"></i>
+</div>
+
+<div class="screen">
+<div class="play">▶</div>
+</div>
+
+</div>
+
+</div>
+</section>
+
+
+<section class="scene final" data-time="8">
+
+<div class="logo">
+MULT архив
+</div>
+
+<div class="center" style="z-index:2">
+
+<div style="font-size:58px;animation:float 2s infinite">
+🚀
+</div>
+
+<h1>
+Бұл — тек бастамасы!
+</h1>
+
+<p>
+Жаңа мультфильмдер • жаңа фильмдер • жаңа мүмкіндіктер
+</p>
+
+<div class="ui"
+style="padding:15px;margin-top:12px;width:100%">
+
+<b>
+❤️ MULT архивке қосылыңыздар
+</b>
+
+<br>
+
+<small>
+Толық нұсқасы жақында...
+</small>
+
+</div>
+
+<div style="
+margin-top:14px;
+font-size:14px;
+font-weight:900;
+">
+
+🎬 Бұл — менің сайтымның DEMO версиясы
+
+</div>
+
+<button
+class="demoBtn"
+onclick="window.open('https://bossinteliq00.github.io/OrderPro/','_blank')">
+
+🌐 DEMO версиясын ашу
+
+</button>
+
+<button
+class="registerBtn"
+onclick="showRegister()">
+
+📝 DEMO версияға тіркелу
+
+</button>
+
+</div>
+</section>
+
+
+<!-- ҚЫЗЫЛ ТІРКЕЛУ ТЕРЕЗЕСІ -->
+
+<div class="modal" id="registerModal">
+
+<div class="modalCard">
+
+<div class="modalIcon">
+⏰
+</div>
+
+<h2>
+Тіркелуге кешігіп қалдыңыз
+</h2>
+
+<p>
+DEMO версиясына тіркелу уақыты аяқталды.
+</p>
+
+<div class="dateBox">
+
+<b>
+Тіркелу уақыты:
+</b>
+
+<br>
+
+14.08.2026 06:00
+
+<br>
+
+—
+
+<br>
+
+16.08.2026 06:00
+
+</div>
+
+<p class="modalSmall">
+Келесі тіркелу ашылған кезде міндетті түрде хабарлаймыз ❤️
+</p>
+
+<button onclick="closeRegister()">
+Түсіндім
+</button>
+
+</div>
+</div>
+
+
+<button
+class="musicBtn"
+id="musicBtn">
+
+🔊 Әуенді өшіру
+
+</button>
+
+
+<div class="controls">
+
+<button id="back">
+◀ Артқа
+</button>
+
+<button id="skip">
+⏩ Пропустить
+</button>
+
+<button id="pause">
+Ⅱ Пауза
+</button>
+
+<button id="next">
+Келесі ▶
+</button>
+
+<button id="restart">
+↻
+</button>
+
+</div>
+
+</div>
+
+
+<script>
+
+const scenes=[
+  ...document.querySelectorAll('.scene')
+];
+
+const bar=
+document.getElementById('bar');
+
+let index=0;
+let elapsed=0;
+let paused=false;
+let timer=null;
+
+const total=
+scenes.reduce(
+  (a,s)=>a+Number(s.dataset.time),
+  0
+);
+
+
+function animateScene(i){
+
+  scenes.forEach(
+    (s,n)=>{
+      s.classList.toggle(
+        'active',
+        n===i
+      );
+    }
+  );
+
+  if(i===3)
+    count('c57',57);
+
+  if(i===4){
+
+    const p=
+    document.getElementById('people');
+
+    p.innerHTML='';
+
+    for(let n=0;n<57;n++){
+
+      const x=
+      document.createElement('span');
+
+      x.className='person';
+
+      x.textContent='●';
+
+      x.style.opacity=
+      n<39?'1':'.16';
+
+      p.appendChild(x);
+    }
+  }
+
+  if(i===5)
+    count('c19',19);
+}
+
+
+function count(id,target){
+
+  const el=
+  document.getElementById(id);
+
+  if(!el)return;
+
+  let n=0;
+
+  const step=
+  Math.max(
+    1,
+    Math.ceil(target/24)
+  );
+
+  const t=
+  setInterval(()=>{
+
+    n=
+    Math.min(
+      target,
+      n+step
+    );
+
+    el.textContent=n;
+
+    if(n>=target)
+      clearInterval(t);
+
+  },55);
+}
+
+
+function next(){
+
+  if(index<scenes.length-1){
+
+    index++;
+
+    elapsed=0;
+
+    animateScene(index);
+
+    updateBar();
+
+  }else{
+
+    clearInterval(timer);
+
+    paused=true;
+
+    document.getElementById(
+      'pause'
+    ).textContent=
+    '▶ Қайта ойнату';
+  }
+}
+
+
+function back(){
+
+  if(index>0){
+
+    index--;
+
+    elapsed=0;
+
+    paused=false;
+
+    document.getElementById(
+      'pause'
+    ).textContent=
+    'Ⅱ Пауза';
+
+    animateScene(index);
+
+    updateBar();
+  }
+}
+
+
+function skip(){
+
+  if(index<scenes.length-1){
+
+    index++;
+
+    elapsed=0;
+
+    animateScene(index);
+
+    updateBar();
+
+  }else{
+
+    index=0;
+
+    elapsed=0;
+
+    paused=false;
+
+    document.getElementById(
+      'pause'
+    ).textContent=
+    'Ⅱ Пауза';
+
+    animateScene(0);
+
+    updateBar();
+  }
+}
+
+
+function updateBar(){
+
+  const before=
+  scenes
+  .slice(0,index)
+  .reduce(
+    (a,s)=>a+Number(s.dataset.time),
+    0
+  );
+
+  bar.style.width=
+  Math.min(
+    100,
+    (
+      before+
+      Math.min(
+        elapsed,
+        Number(
+          scenes[index].dataset.time
+        )
+      )
+    )/total*100
+  )+'%';
+}
+
+
+function tick(){
+
+  if(paused)return;
+
+  elapsed+=.1;
+
+  updateBar();
+
+  if(
+    elapsed>=
+    Number(
+      scenes[index].dataset.time
+    )
+  ){
+
+    elapsed=0;
+
+    next();
+  }
+}
+
+
+function restart(){
+
+  clearInterval(timer);
+
+  index=0;
+
+  elapsed=0;
+
+  paused=false;
+
+  bar.style.width='0%';
+
+  document.getElementById(
+    'pause'
+  ).textContent=
+  'Ⅱ Пауза';
+
+  animateScene(0);
+
+  timer=
+  setInterval(
+    tick,
+    100
+  );
+}
+
+
+document.getElementById(
+  'restart'
+).onclick=restart;
+
+
+document.getElementById(
+  'back'
+).onclick=back;
+
+
+document.getElementById(
+  'next'
+).onclick=next;
+
+
+document.getElementById(
+  'skip'
+).onclick=skip;
+
+
+/* ==========================
+   ТІРКЕЛУ ТЕРЕЗЕСІ
+========================== */
+
+function showRegister(){
+
+  document
+  .getElementById(
+    'registerModal'
+  )
+  .classList.add('show');
+}
+
+
+function closeRegister(){
+
+  document
+  .getElementById(
+    'registerModal'
+  )
+  .classList.remove('show');
+}
+
+
+document
+.getElementById(
+  'registerModal'
+)
+.addEventListener(
+  'click',
+  e=>{
+
+    if(
+      e.target.id===
+      'registerModal'
+    )
+      closeRegister();
+
+  }
+);
+
+
+/* ==========================
+   MUSIC
+========================== */
+
+let audioCtx=null;
+let musicTimer=null;
+let musicOn=true;
+
+const notes=[
+  523.25,
+  659.25,
+  783.99,
+  659.25,
+  587.33,
+  698.46,
+  880,
+  698.46
+];
+
+
+function startMusic(){
+
+  if(!musicOn)return;
+
+  if(!audioCtx){
+
+    audioCtx=
+    new (
+      window.AudioContext||
+      window.webkitAudioContext
+    )();
+  }
+
+  if(
+    audioCtx.state===
+    'suspended'
+  )
+    audioCtx.resume();
+
+  if(musicTimer)return;
+
+  let i=0;
+
+  musicTimer=
+  setInterval(()=>{
+
+    if(!musicOn)return;
+
+    const o=
+    audioCtx.createOscillator();
+
+    const g=
+    audioCtx.createGain();
+
+    o.type='sine';
+
+    o.frequency.value=
+    notes[
+      i++%notes.length
+    ];
+
+    g.gain.setValueAtTime(
+      .0001,
+      audioCtx.currentTime
+    );
+
+    g.gain.exponentialRampToValueAtTime(
+      .045,
+      audioCtx.currentTime+.025
+    );
+
+    g.gain.exponentialRampToValueAtTime(
+      .0001,
+      audioCtx.currentTime+.22
+    );
+
+    o.connect(g);
+
+    g.connect(
+      audioCtx.destination
+    );
+
+    o.start();
+
+    o.stop(
+      audioCtx.currentTime+.24
+    );
+
+  },260);
+}
+
+
+document.getElementById(
+  'musicBtn'
+).onclick=()=>{
+
+  musicOn=!musicOn;
+
+  document.getElementById(
+    'musicBtn'
+  ).textContent=
+  musicOn
+  ?'🔊 Әуенді өшіру'
+  :'🔇 Әуенді қосу';
+
+  if(musicOn)
+    startMusic();
+};
+
+
+document.addEventListener(
+  'click',
+  ()=>startMusic(),
+  {once:true}
+);
+
+
+/* ==========================
+   PAUSE
+========================== */
+
+document.getElementById(
+  'pause'
+).onclick=()=>{
+
+  paused=!paused;
+
+  document.getElementById(
+    'pause'
+  ).textContent=
+  paused
+  ?'▶ Жалғастыру'
+  :'Ⅱ Пауза';
+
+  if(
+    !paused &&
+    index===scenes.length-1
+  )
+    restart();
+};
+
+
+/* ==========================
+   БАСТАУ
+========================== */
+
+animateScene(0);
+
+timer=
+setInterval(
+  tick,
+  100
+);
+
+</script>
+
+</body>
+</html>
